@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <style>
+      @media print {
+         body {
+           margin: 0;
+           -webkit-print-color-adjust: exact;
+         }
+
+         .a4-page {
+            width: 210mm;
+            height: 297mm;
+            margin: 0;
+            padding: 5mm;
+         }
+
+         button {
+            display: none;
+         }
+
+         input, textarea {
+            border: none;
+            outline: none;
+         }
+      }
+   </style>
+</head>
+<body>
+    <div class="a4-page">
+    <div id="header">
+    <span>
+    <h2 id="chill">CHILL TECH</h2>
+    <h4>Card Bank Building YMCA, Alappuzha <br> Ph: <b>9446998352</b><br> GSTIN: <b>32ADKPT1315Q3Z6</b></h4>
+    </span>
+    <span>
+    <div id="og"><h4>ORIGINAL</h4></div>
+    </span>
+    </div>
+    <div id="full-box">
+    <table id="tax-invoice">
+        <th>QUOTATION</th>
+    </table><br>
+    <div class="tax_invoice">
+        <div id="left1">
+            <div class="row1">
+            <label for="Type">Invoice Type :</label>
+            {{invoice_type}}
+            </div>
+            <div class="row1">
+            <label for="No">Quote No :</label>
+            {{quotation_no}}
+            </div>
+            <div class="row1">
+            <label for="Date">Quote Date :</label>
+            {{quotation_date}}
+            </div>
+            <div class="row1">
+            <label for="State">State :</label>
+            {{state}}
+            </div>
+        </div>
+        <table border="1">
+        <th>Details of Receiver</th>
+        <th id="billedto">Billed to</th>
+        <th>Details of Consignee</th>
+        <th id="shipped">Shipped to</th>
+    </table>
+    <div class="Details">
+        <div id="left2">
+            <div class="row1">
+            <label for="name">Name :</label>
+            {{name1}}
+            </div>
+            <div class="row1">
+            <label for="address">Address :</label>
+            {{address1}}
+            </div>
+            <div class="row1">
+            <label for="gstin">GSTIN :</label>
+            {{gstin1}}
+            </div>
+            <div class="row1">
+            <label for="state">State :</label>
+            {{state1}}
+            </div>
+            <div class="row1">
+            <div id="stc">
+                <label for="stcd">State Code :</label>
+                {{stcd1}}
+            </div>
+            </div>
+        </div>
+        <div id="center">
+            <label for="aadhar">Aadhar No :</label>
+            {{aadhar}}
+        </div>
+        <div id="right2">
+            <div class="row2">
+            <label for="name">Name :</label>
+            {{name2}}
+            </div>
+            <div class="row2">
+            <label for="address">Address :</label>
+            {{address2}}
+            </div>
+            <div class="row2">
+            <label for="gstin">GSTIN :</label>
+            {{gstin2}}
+            </div>
+            <div class="row2">
+            <label for="state">State :</label>
+            {{state2}}
+            </div>
+            <div class="row2">
+            <div id="stc">
+                <label for="stcd">State Code :</label>
+                {{stcd2}}
+            </div>
+            </div>
+        </div>
+    </div>
+    <div class="tbl">
+    <table border="1">
+        <tr>
+            <th rowspan="2">Sl.No</th>
+            <th rowspan="2">Name of Product/Service</th>
+            <th rowspan="2">HSN <br> ACS</th>
+            <th rowspan="2">Qty</th>
+            <th rowspan="2">Rate</th>
+            <th rowspan="2">Amount</th>
+            <th rowspan="2">Taxable <br> Value</th>
+            <th colspan="2">CGST</th>
+            <th colspan="2">SGST</th>
+            <th rowspan="2">Total</th>
+        </tr>
+        <tr>
+            <th>Rate</th>
+            <th>Amount</th>
+            <th>Rate</th>
+            <th>Amount</th>
+        </tr>
+        {% for p in products %}
+<tr>
+    <td>{{ p.slno }}</td>
+    <td>{{ p.product }}</td>
+    <td>{{ p.hsn }}</td>
+    <td>{{ p.qty }}</td>
+    <td>{{ p.rate }}</td>
+    <td>{{ p.amount }}</td>
+    <td>{{ p.taxable }}</td>
+    <td>{{ p.crate }}</td>
+    <td>{{ p.cgst }}</td>
+    <td>{{ p.srate }}</td>
+    <td>{{ p.sgst }}</td>
+    <td>{{ p.total }}</td>
+</tr>
+{% endfor %}
+
+<tr>
+    <td colspan="4"><b>Total</b></td>
+    <td>{{ products | sum(attribute='qty') }}</td>
+    <td></td>
+    <td>{{ total_amount }}</td>
+    <td></td>
+    <td>{{ total_taxable }}</td>
+    <td></td>
+    <td>{{ total_cgst }}</td>
+    <td></td>
+    <td>{{ total_sgst }}</td>
+    <td>{{ grand_total }}</td>
+</tr>
+
+<!-- KEEP EMPTY ROWS FOR DESIGN -->
+{% for i in range(10) %}
+<tr>
+    <td>&nbsp;</td><td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td><td></td>
+    <td></td><td></td>
+</tr>
+{% endfor %}
+    </table> 
+    </div> 
+   <table border="1" id="lower">
+    <tr>
+        <td id="left-lower">
+            <div id="tax">     
+                <h4>Total Invoice Amount in Words:</h4>
+                {{total_words}}
+                <div class="tax-container">
+                    <table class="tax-table">
+                        <tr>
+                            <td class="title" rowspan="5">SGST</td>
+                        </tr>
+                        <tr><td class="rate">2.5 %</td><td class="amt">{{ sgst_summary[2.5]|round(2) }}</td></tr>
+                        <tr><td class="rate">6 %</td><td class="amt">{{ sgst_summary[6]|round(2) }}</td></tr>
+                        <tr><td class="rate">9 %</td><td class="amt">{{ sgst_summary[9]|round(2) }}</td></tr>
+                        <tr><td class="rate">14 %</td><td class="amt">{{ sgst_summary[14]|round(2) }}</td></tr>
+                    </table>
+                    <table class="tax-table">
+                        <tr>
+                            <td class="title" rowspan="5">CGST</td>
+                        </tr>
+                        <tr><td class="rate">2.5 %</td><td class="amt">{{ cgst_summary[2.5]|round(2) }}</td></tr>
+                        <tr><td class="rate">6 %</td><td class="amt">{{ cgst_summary[6]|round(2) }}</td></tr>
+                        <tr><td class="rate">9 %</td><td class="amt">{{ cgst_summary[9]|round(2) }}</td></tr>
+                        <tr><td class="rate">14 %</td><td class="amt">{{ cgst_summary[14]|round(2) }}</td></tr>
+                    </table>
+                </div>
+                <p>
+                    Bank Name: IDBI BANK <br>
+                    A/c No: 305102000001502 <br>
+                    IFSC: IBKL00
+                </p>
+            </div>
+        </td>
+        <td>
+            <table id="gst">
+                <tr>
+                    <td id="right-lower">
+                        <label>Total Amount Before Tax</label>
+                        {{total_amount}}
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Add : CGST</label>
+                        {{total_cgst}}
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Add : SGST</label>
+                        {{total_sgst}}
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Tax Amount</label>
+                        {{total_gst}}
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label></label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Total Amount After Tax</label>
+                        {{grand_total}}
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>G.S.T Payable on Reverse Charge</label>
+                        <input type="text" value="NA" readonly>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label id="italics">Certified that the particulars given above are true and correct</label>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td id="lower-left">
+            <label>Terms and Conditions :</label><br><br><br>
+            <label id="seal">(Common Seal)</label>
+        </td>
+        <td id="lower-right">
+            For, <br> CHILLTECH <br>Authorised Signatory
+        </td>
+    </tr>
+    <tr class="eoe">
+        <td></td>
+        <td id="eoe">[E&OE]</td>
+    </tr>
+    </table>
+    </div>
+    <button type="submit">Save</button>
+    <div style="text-align:center;">
+    <button onclick="window.print()">Print</button>
+    </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,796 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+      function toggleOther() {
+        let type = document.getElementById("invoice_type").value;
+        document.getElementById("other_type").style.display =
+        (type === "OTHER") ? "inline-block" : "none";
+      }
+     document.addEventListener("DOMContentLoaded", function () {
+    // AUTO QUOTATION NUMBER
+    let qNo = document.getElementById("quotation_no");
+
+    let today = new Date().toISOString().split('T')[0];
+
+    let qDate = document.getElementById("quotation_date");
+    if(qDate) qDate.value = today;
+
+    let number = "QTN-" + today.getFullYear() + 
+                 (today.getMonth()+1).toString().padStart(2,'0') +
+                 today.getDate().toString().padStart(2,'0') +
+                 "-" + Math.floor(Math.random()*1000);
+
+    qNo.value = number;
+
+    // AUTO DATE
+    let qDate = document.getElementById("quotation_date");
+    qDate.valueAsDate = new Date();
+   // ENTER → next input
+    const inputs = document.querySelectorAll("input");
+
+    inputs.forEach((input, index) => {
+        input.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                let nextInput = inputs[index + 1];
+                if (nextInput) nextInput.focus();
+            }
+        });
+});
+     // AUTO EXPAND TEXTAREA
+    document.querySelectorAll('.auto-expand').forEach(el => {
+        el.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    });
+
+});
+     document.addEventListener("DOMContentLoaded", function () {
+      document.querySelectorAll('[name^="qty"]').forEach(input => {
+      input.addEventListener('keydown', function(e) {
+        if (e.key === "Enter") {
+            e.preventDefault();
+            let val = parseFloat(this.value);
+            if (!isNaN(val)) {
+                this.value = val.toFixed(2);
+            }
+        }
+    });
+});
+     document.querySelectorAll('.auto-expand').forEach(el => {
+       el.addEventListener('input', function () {
+         this.style.height = 'auto';
+         this.style.height = this.scrollHeight + 'px';
+       });
+    });
+document.querySelectorAll('.auto-width').forEach(input => {
+
+    function resize() {
+        // create hidden span
+        let span = document.createElement("span");
+        span.style.visibility = "hidden";
+        span.style.whiteSpace = "pre";
+        span.style.font = window.getComputedStyle(input).font;
+        span.textContent = input.value || " ";
+
+        document.body.appendChild(span);
+
+        input.style.width = (span.offsetWidth + 10) + "px";
+
+        document.body.removeChild(span);
+    }
+
+    input.addEventListener("input", resize);
+
+    resize(); // initial
+});
+    document.addEventListener("DOMContentLoaded", function () {
+      const inputs = document.querySelectorAll("input");
+
+      inputs.forEach((input, index) => {
+        input.addEventListener("keydown", function (e) {
+            if (e.key === "Enter") {
+                e.preventDefault(); // stop form submit
+
+                let nextInput = inputs[index + 1];
+                if (nextInput) {
+                    nextInput.focus();
+                }
+            }
+        });
+    });
+});
+function calculateRow(row) {
+    let qty = parseFloat(row.querySelector('[name^="qty"]').value) || 0;
+    let rate = parseFloat(row.querySelector('[name^="rate"]').value) || 0;
+    let crate = parseFloat(row.querySelector('[name^="crate"]').value) || 0;
+    let srate = parseFloat(row.querySelector('[name^="srate"]').value) || 0;
+
+    let amount = qty * rate;
+    let taxable = amount;
+
+    let cgst_amt = taxable * crate / 100;
+    let sgst_amt = taxable * srate / 100;
+
+    let total = taxable + cgst_amt + sgst_amt;
+
+    row.children[5].querySelector('input').value = amount.toFixed(2);
+    row.children[6].querySelector('input').value = taxable.toFixed(2);
+    row.children[8].querySelector('input').value = cgst_amt.toFixed(2);
+    row.children[10].querySelector('input').value = sgst_amt.toFixed(2);
+    row.children[11].querySelector('input').value = total.toFixed(2);
+}
+function updateSerialNumbers() {
+    let rows = document.querySelectorAll('.tbl table tr');
+    let count = 1;
+
+    rows.forEach((row, index) => {
+        if (index < 2) return; // skip header
+
+        let product = row.querySelector('[name^="product"]')?.value;
+        let slInput = row.children[0]?.querySelector('input');
+
+        if (!slInput) return;
+
+        if (product && product.trim() !== "") {
+            slInput.value = count;
+            count++;
+        } else {
+            slInput.value = ""; // remove number if empty
+        }
+    });
+}
+function calculateTotal() {
+    let rows = document.querySelectorAll('.tbl table tr');
+
+    let total_qty = 0, total_amt = 0, total_taxable = 0; 
+    let total_cgst = 0, total_sgst = 0, grand_total = 0;
+
+    rows.forEach((row, index) => {
+        if (index < 2) return; // skip header
+
+        let qty = parseFloat(row.children[4]?.querySelector('input')?.value) || 0;
+        let amt = parseFloat(row.children[6]?.querySelector('input')?.value) || 0;
+        let taxable = parseFloat(row.children[8]?.querySelector('input')?.value) || 0;
+        let cgst = parseFloat(row.children[10]?.querySelector('input')?.value) || 0;
+        let sgst = parseFloat(row.children[12]?.querySelector('input')?.value) || 0;
+        let total = parseFloat(row.children[13]?.querySelector('input')?.value) || 0;
+
+        total_qty += qty;
+        total_amt += amt;
+        total_taxable += taxable;
+        total_cgst += cgst;
+        total_sgst += sgst;
+        grand_total += total;
+    });
+    document.getElementById("total_qty").value = total_qty;
+    document.getElementById("total_amount").value = total_amt.toFixed(2);
+    document.getElementById("total_taxable").value = total_taxable.toFixed(2);
+    document.getElementById("total_cgst").value = total_cgst.toFixed(2);
+    document.getElementById("total_sgst").value = total_sgst.toFixed(2);
+    document.getElementById("grand_total").value = grand_total.toFixed(2);
+}
+    document.querySelectorAll('.tbl table tr').forEach(row => {
+    row.addEventListener('input', () => {
+        calculateRow(row);
+        updateSerialNumbers(); 
+        calculateTotal();       
+    });
+});});
+</script>
+</head>
+<body>
+    <div style="margin-bottom:10px;">
+    <a href="/">← Back to Home</a>
+    </div>
+    <div class="a4-page">
+    <div id="header">
+    <span>
+    <h2 id="chill">CHILL TECH</h2>
+    <h4>Card Bank Building YMCA, Alappuzha <br> Ph: <b>9446998352</b><br> GSTIN: <b>32ADKPT1315Q3Z6</b></h4>
+    </span>
+    <span>
+    <div id="og"><h4>ORIGINAL</h4></div>
+    </span>
+    </div>
+    <form action="/save-quotation" method="POST">
+    <div id="full-box">
+    <table id="tax-invoice">
+        <th>QUOTATION</th>
+    </table><br>
+    <div class="tax_invoice">
+        <div id="left1">
+            <div class="row1">
+            <label for="Type">Invoice Type :</label>
+            <select name="invoice_type" id="invoice_type" onchange="toggleOther()">
+               <option value="">Select</option>
+               <option value="CASH">CASH</option>
+               <option value="UPI">UPI</option>
+               <option value="CARD">CARD</option>
+               <option value="OTHER">OTHER</option>
+            </select>
+            <input type="text" id="other_type" name="other_type" placeholder="Enter type" style="display:none;">            </div>
+            <div class="row1">
+            <label for="No">Quote no :</label>
+            <input type="text" name="quotation_no" value="{{ quotation_no }}" readonly>
+            </div>
+            <div class="row1">
+            <label for="Date">Quote Date :</label>
+            <input type="date" id="quotation_date" name="quotation_date">
+            </div>
+            <div class="row1">
+            <label for="State">State :</label>
+            <input type="text" id="State" name="state">
+            </div>
+            <div class="row1">
+            <div id="stc">
+                <label for="stcd">State Code :</label>
+                <input type="text" id="stcd" name="stcd1" class="small-box">
+            </div>
+            </div>
+        </div>
+    </div>
+    <table border="1">
+        <th>Details of Receiver</th>
+        <th id="billedto">Billed to</th>
+        <th>Details of Consignee</th>
+        <th id="shipped">Shipped to</th>
+    </table>
+    <div class="Details">
+        <div id="left2">
+            <div class="row1">
+            <label for="name">Name :</label>
+            <input type="text" id="name" name="name1" class="auto-width">
+            </div>
+            <div class="row1">
+            <label for="address">Address :</label>
+            <textarea name="address1" id="address" class="auto-expand auto-width"></textarea>
+            </div>
+            <div class="row1">
+            <label for="gstin">GSTIN :</label>
+            <input type="text" id="gstin" name="gstin1">
+            </div>
+            <div class="row1">
+            <label for="state">State :</label>
+            <input type="text" id="state" name="state1">
+            </div>
+            <div class="row1">
+            <div id="stc">
+                <label for="stcd">State Code :</label>
+                <input type="text" id="stcd" name="stcd1" class="small-box">
+            </div>
+            </div>
+        </div>
+        <div id="center">
+            <label for="aadhar">Aadhar No :</label>
+            <input type="text" id="aadhar" name="aadhar">
+        </div>
+        <div id="right2">
+            <div class="row2">
+            <label for="name">Name :</label>
+            <input type="text" id="name" name="name2" class="auto-width">
+            </div>
+            <div class="row2">
+            <label for="address">Address :</label>
+            <textarea name="address2" id="address" class="auto-expand auto-width"></textarea>
+            </div>
+            <div class="row2">
+            <label for="gstin">GSTIN :</label>
+            <input type="text" id="gstin" name="gstin2">
+            </div>
+            <div class="row2">
+            <label for="state">State :</label>
+            <input type="text" id="state" name="state2">
+            </div>
+            <div class="row2">
+            <div id="stc">
+                <label for="stcd">State Code :</label>
+                <input type="text" id="stcd" name="stcd2" class="small-box">
+            </div>
+            </div>
+        </div>
+    </div>
+    <div class="tbl">
+    <table border="1">
+        <tr>
+            <th rowspan="2">Sl.No</th>
+            <th rowspan="2">Name of Product/Service</th>
+            <th rowspan="2">HSN <br> ACS</th>
+            <th rowspan="2">UOM</th>
+            <th rowspan="2">Qty</th>
+            <th rowspan="2">Rate</th>
+            <th rowspan="2">Amount</th>
+            <th rowspan="2">Less <br> Discount</th>
+            <th rowspan="2">Taxable <br> Value</th>
+            <th colspan="2">CGST</th>
+            <th colspan="2">SGST</th>
+            <th rowspan="2">Total</th>
+        </tr>
+        <tr>
+            <th>Rate</th>
+            <th>Amount</th>
+            <th>Rate</th>
+            <th>Amount</th>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product1" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn1"></td>
+            <td><input type="text" name="uom1"></td>
+            <td><input type="text" name="qty1"></td>
+            <td><input type="text" name="rate1"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount1"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate1"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate1"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product2" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn2"></td>
+            <td><input type="text" name="uom2"></td>
+            <td><input type="text" name="qty2"></td>
+            <td><input type="text" name="rate2"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount2"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate2"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate2"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product3" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn3"></td>
+            <td><input type="text" name="uom3"></td>
+            <td><input type="text" name="qty3"></td>
+            <td><input type="text" name="rate3"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount3"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate3"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate3"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product4" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn4"></td>
+            <td><input type="text" name="uom4"></td>
+            <td><input type="text" name="qty4"></td>
+            <td><input type="text" name="rate4"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount4"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate4"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate4"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product5" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn5"></td>
+            <td><input type="text" name="uom5"></td>
+            <td><input type="text" name="qty5"></td>
+            <td><input type="text" name="rate5"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount5"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate5"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate5"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product6" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn6"></td>
+            <td><input type="text" name="uom6"></td>
+            <td><input type="text" name="qty6"></td>
+            <td><input type="text" name="rate6"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount6"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate6"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate6"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product7" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn7"></td>
+            <td><input type="text" name="uom7"></td>
+            <td><input type="text" name="qty7"></td>
+            <td><input type="text" name="rate7"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount7"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate7"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate7"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product8" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn8"></td>
+            <td><input type="text" name="uom8"></td>
+            <td><input type="text" name="qty8"></td>
+            <td><input type="text" name="rate8"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount8"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate8"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate8"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product9" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn9"></td>
+            <td><input type="text" name="uom9"></td>
+            <td><input type="text" name="qty9"></td>
+            <td><input type="text" name="rate9"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount9"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate9"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate9"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product10" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn10"></td>
+            <td><input type="text" name="uom10"></td>
+            <td><input type="text" name="qty10"></td>
+            <td><input type="text" name="rate10"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount10"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate10"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate10"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product11" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn11"></td>
+            <td><input type="text" name="uom11"></td>
+            <td><input type="text" name="qty11"></td>
+            <td><input type="text" name="rate11"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount11"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate11"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate11"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product12" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn12"></td>
+            <td><input type="text" name="uom12"></td>
+            <td><input type="text" name="qty12"></td>
+            <td><input type="text" name="rate12"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount12"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate12"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate12"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product13" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn13"></td>
+            <td><input type="text" name="uom13"></td>
+            <td><input type="text" name="qty13"></td>
+            <td><input type="text" name="rate13"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount13"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate13"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate13"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product14" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn14"></td>
+            <td><input type="text" name="uom14"></td>
+            <td><input type="text" name="qty14"></td>
+            <td><input type="text" name="rate14"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount14"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate14"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate14"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product15" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn15"></td>
+            <td><input type="text" name="uom15"></td>
+            <td><input type="text" name="qty15"></td>
+            <td><input type="text" name="rate15"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount15"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate15"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate15"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product16" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn16"></td>
+            <td><input type="text" name="uom16"></td>
+            <td><input type="text" name="qty16"></td>
+            <td><input type="text" name="rate16"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount16"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate16"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate16"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product17" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn17"></td>
+            <td><input type="text" name="uom17"></td>
+            <td><input type="text" name="qty17"></td>
+            <td><input type="text" name="rate17"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount17"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate17"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate17"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product18" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn18"></td>
+            <td><input type="text" name="uom18"></td>
+            <td><input type="text" name="qty18"></td>
+            <td><input type="text" name="rate18"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount18"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate18"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate18"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product19" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn19"></td>
+            <td><input type="text" name="uom19"></td>
+            <td><input type="text" name="qty19"></td>
+            <td><input type="text" name="rate19"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount19"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate19"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate19"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product20" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn20"></td>
+            <td><input type="text" name="uom20"></td>
+            <td><input type="text" name="qty20"></td>
+            <td><input type="text" name="rate20"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount20"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate20"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate20"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product21" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn21"></td>
+            <td><input type="text" name="uom21"></td>
+            <td><input type="text" name="qty21"></td>
+            <td><input type="text" name="rate21"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount21"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate21"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate21"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product22" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn22"></td>
+            <td><input type="text" name="uom22"></td>
+            <td><input type="text" name="qty22"></td>
+            <td><input type="text" name="rate22"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount22"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate22"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate22"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product23" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn23"></td>
+            <td><input type="text" name="uom23"></td>
+            <td><input type="text" name="qty23"></td>
+            <td><input type="text" name="rate23"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="discount23"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate23"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate23"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+    </table> 
+    </div> 
+   <table border="1" id="lower">
+    <tr>
+        <td id="left-lower">
+            <div id="tax">     
+                <h4>Total Invoice Amount in Words:</h4>
+                <input type="text" id="totalamt">
+                <div class="tax-container">
+                    <table class="tax-table">
+                        <tr>
+                            <td class="title" rowspan="5">SGST</td>
+                        </tr>
+                        <tr><td class="rate">2.5 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">6 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">9 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">14 %</td><td class="amt">0.00</td></tr>
+                    </table>
+                    <table class="tax-table">
+                        <tr>
+                            <td class="title" rowspan="5">CGST</td>
+                        </tr>
+                        <tr><td class="rate">2.5 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">6 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">9 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">14 %</td><td class="amt">0.00</td></tr>
+                    </table>
+                </div>
+                <p>
+                    Bank Name: IDBI BANK <br>
+                    A/c No: 305102000001502 <br>
+                    IFSC: IBKL00
+                </p>
+            </div>
+        </td>
+        <td>
+            <table id="gst">
+                <tr>
+                    <td id="right-lower">
+                        <label>Total Amount Before Tax</label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Add : CGST</label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Add : SGST</label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Tax Amount : GST</label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label></label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Total Amount After Tax</label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>G.S.T Payable on Reverse Charge</label>
+                        <input type="text" value="NA" readonly>
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label id="italics">Certified that the particulars given above are true and correct</label>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td id="lower-left">
+            <label>Terms and Conditions :</label><br><br><br>
+            <label id="seal">(Common Seal)</label>
+        </td>
+        <td id="lower-right">
+            For, <br> CHILLTECH <br>Authorised Signatory
+        </td>
+    </tr>
+    <tr class="eoe">
+        <td></td>
+        <td id="eoe">[E&OE]</td>
+    </tr>
+    </table>
+    </div>
+    <button type="submit">Save</button>
+    </form>
+    </div>
+</body>
+</html>

@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Dashboard</title>
+    <style>
+        body {
+            font-family: Arial;
+            margin: 20px;
+        }
+
+        .cards {
+            display: flex;
+            gap: 20px;
+        }
+
+        .card {
+            padding: 20px;
+            background: #f2f2f2;
+            border-radius: 10px;
+            width: 200px;
+            text-align: center;
+        }
+
+        .actions {
+            margin: 20px 0;
+        }
+
+        .actions a {
+            padding: 10px 15px;
+            background: black;
+            color: white;
+            text-decoration: none;
+            margin-right: 10px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+        }
+    </style>
+</head>
+<body>
+
+<h1>📊 Dashboard</h1>
+
+<!-- SUMMARY -->
+<div class="cards">
+
+    <div class="card">
+        <h3>Total Invoices</h3>
+        <h2>{{ total_invoices }}</h2>
+    </div>
+
+    <div class="card">
+        <h3>Total Revenue</h3>
+        <h2>₹ {{ total_revenue }}</h2>
+    </div>
+
+    <h2>📅 Daily Revenue (Last 7 Days)</h2>
+
+    <table>
+    <tr>
+        <th>Date</th>
+        <th>Revenue</th>
+    </tr>
+
+    {% for d in daily_data %}
+    <tr>
+        <td>{{ d[0] }}</td>
+        <td>₹ {{ d[1] }}</td>
+    </tr>
+    {% endfor %}
+
+    </table>
+    <h2>📆 Monthly Revenue</h2>
+
+    <table>
+    <tr>
+        <th>Month</th>
+        <th>Revenue</th>
+    </tr>
+
+    {% for m in monthly_data %}
+    <tr>
+        <td>{{ m[0] }}</td>
+        <td>₹ {{ m[1] }}</td>
+    </tr>
+    {% endfor %}
+
+    </table>
+    <h2>📊 Yearly Revenue</h2>
+
+    <table>
+    <tr>
+        <th>Year</th>
+        <th>Revenue</th>
+    </tr>
+
+    {% for y in yearly_data %}
+    <tr>
+        <td>{{ y[0] }}</td>
+        <td>₹ {{ y[1] }}</td>
+    </tr>
+    {% endfor %}
+
+    </table>
+</div>
+
+<h2>🏆 Top Customers</h2>
+
+<table>
+<tr>
+    <th>Customer</th>
+    <th>Total Spent</th>
+</tr>
+
+{% for cust in top_customers %}
+<tr>
+    <td>{{ cust[0] }}</td>
+    <td>₹ {{ cust[1] }}</td>
+</tr>
+{% endfor %}
+
+</table>
+
+<!-- ACTIONS -->
+<div class="actions">
+    <a href="/invoice">➕ Create Invoice</a>
+    <a href="/invoices">📄 View All</a>
+</div>
+
+<!-- RECENT INVOICES -->
+<h2>Recent Invoices</h2>
+
+<table>
+<tr>
+    <th>ID</th>
+    <th>Invoice No</th>
+    <th>Date</th>
+    <th>Customer</th>
+    <th>Total</th>
+    <th>Action</th>
+</tr>
+
+{% for inv in recent_invoices %}
+<tr>
+    <td>{{ inv[0] }}</td>
+    <td>{{ inv[1] }}</td>
+    <td>{{ inv[2] }}</td>
+    <td>{{ inv[3] }}</td>
+    <td>{{ inv[4] }}</td>
+    <td>
+        <a href="/invoice/{{ inv[0] }}">View</a>
+    </td>
+</tr>
+{% endfor %}
+
+</table>
+
+</body>
+</html>

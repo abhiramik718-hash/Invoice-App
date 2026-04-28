@@ -1,0 +1,30 @@
+<h2>All Invoices</h2>
+
+<form method="GET" action="/invoices" style="margin-bottom:10px;">
+    <input type="text" name="search" placeholder="Search invoice..." 
+           value="{{ request.args.get('search', '') }}">
+    <button type="submit">Search</button>
+    <a href="/invoices">Reset</a>
+</form>
+
+<table border="1">
+<tr>
+    <th>ID</th>
+    <th>Invoice No</th>
+    <th>Date</th>
+    <th>Customer</th>
+    <th>Total</th>
+    <th>View</th>
+</tr>
+
+{% for inv in invoices %}
+<tr>
+    <td>{{ inv[0] }}</td>
+    <td>{{ inv[1] }}</td>
+    <td>{{ inv[2] }}</td>
+    <td>{{ inv[3] }}</td>
+    <td>{{ inv[4] }}</td>
+    <td><a href="/invoice/{{ inv[0] }}">View</a></td>
+</tr>
+{% endfor %}
+</table>

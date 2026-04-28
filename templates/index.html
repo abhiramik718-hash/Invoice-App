@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Document</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <script>
+// ---------- STATE CODE ----------
+function setStateCode(select) {
+    let code = select.options[select.selectedIndex].dataset.code;
+
+    if (select.id === "state_main") {
+        document.getElementById("state_code_main").value = code || "";
+    }
+
+    if (select.id === "state_receiver") {
+        document.getElementById("state_code_receiver").value = code || "";
+    }
+}
+
+// ---------- PAGE LOAD ----------
+document.addEventListener("DOMContentLoaded", function () {
+
+    // Toggle OTHER
+    window.toggleOther = function () {
+        let type = document.getElementById("invoice_type").value;
+        document.getElementById("other_type").style.display =
+            (type === "OTHER") ? "inline-block" : "none";
+    };
+
+    // Set today's date
+    let today = new Date().toISOString().split('T')[0];
+
+    let invDate = document.getElementById("Date");
+    if (invDate) invDate.value = today;
+
+    let dos = document.getElementById("DOS");
+    if (dos) dos.value = today;
+
+    // Qty formatting
+    document.querySelectorAll('[name^="qty"]').forEach(input => {
+        input.addEventListener('keydown', function (e) {
+            if (e.key === "Enter") {
+                e.preventDefault();
+                let val = parseFloat(this.value);
+                if (!isNaN(val)) {
+                    this.value = val.toFixed(2);
+                }
+            }
+        });
+    });
+
+    // Auto expand textarea
+    document.querySelectorAll('.auto-expand').forEach(el => {
+        el.addEventListener('input', function () {
+            this.style.height = 'auto';
+            this.style.height = this.scrollHeight + 'px';
+        });
+    });
+
+    // Auto width input
+    document.querySelectorAll('.auto-width').forEach(input => {
+
+        function resize() {
+            let span = document.createElement("span");
+            span.style.visibility = "hidden";
+            span.style.whiteSpace = "pre";
+            span.style.font = window.getComputedStyle(input).font;
+            span.textContent = input.value || " ";
+
+            document.body.appendChild(span);
+            input.style.width = (span.offsetWidth + 10) + "px";
+            document.body.removeChild(span);
+        }
+
+        input.addEventListener("input", resize);
+        resize();
+    });
+
+    // Enter = next field
+    const fields = Array.from(document.querySelectorAll("input, select, textarea"))
+        .filter(el => !el.readOnly && !el.disabled);
+
+    fields.forEach((field, index) => {
+        field.addEventListener("keydown", function (e) {
+
+            if (e.key === "Enter") {
+
+                if (this.tagName.toLowerCase() === "textarea") return;
+
+                e.preventDefault();
+
+                let nextField = fields[index + 1];
+                if (nextField) nextField.focus();
+            }
+        });
+    });
+
+    // Table calculations trigger
+    document.querySelectorAll('.tbl table tr').forEach(row => {
+        row.addEventListener('input', () => {
+            calculateRow(row);
+            updateSerialNumbers();
+            calculateTotal();
+        });
+    });
+
+});
+
+// ---------- CALCULATIONS ----------
+function calculateRow(row) {
+    let qty = parseFloat(row.querySelector('[name^="qty"]')?.value) || 0;
+    let rate = parseFloat(row.querySelector('[name^="rate"]')?.value) || 0;
+    let crate = parseFloat(row.querySelector('[name^="crate"]')?.value) || 0;
+    let srate = parseFloat(row.querySelector('[name^="srate"]')?.value) || 0;
+
+    let amount = qty * rate;
+    let taxable = amount;
+
+    let cgst_amt = taxable * crate / 100;
+    let sgst_amt = taxable * srate / 100;
+
+    let total = taxable + cgst_amt + sgst_amt;
+
+    if (row.children[5]) row.children[5].querySelector('input').value = amount.toFixed(2);
+    if (row.children[6]) row.children[6].querySelector('input').value = taxable.toFixed(2);
+    if (row.children[8]) row.children[8].querySelector('input').value = cgst_amt.toFixed(2);
+    if (row.children[10]) row.children[10].querySelector('input').value = sgst_amt.toFixed(2);
+    if (row.children[11]) row.children[11].querySelector('input').value = total.toFixed(2);
+}
+
+function updateSerialNumbers() {
+    let rows = document.querySelectorAll('.tbl table tr');
+    let count = 1;
+
+    rows.forEach((row, index) => {
+        if (index < 2) return;
+
+        let product = row.querySelector('[name^="product"]')?.value;
+        let slInput = row.children[0]?.querySelector('input');
+
+        if (!slInput) return;
+
+        if (product && product.trim() !== "") {
+            slInput.value = count++;
+        } else {
+            slInput.value = "";
+        }
+    });
+}
+
+function calculateTotal() {
+    let rows = document.querySelectorAll('.tbl table tr');
+
+    let total_qty = 0,
+        total_amt = 0,
+        total_taxable = 0,
+        total_cgst = 0,
+        total_sgst = 0,
+        grand_total = 0;
+
+    rows.forEach((row, index) => {
+        if (index < 2) return; // skip header
+
+        let cells = row.children;
+
+        // skip total row itself
+        if (row.id === "total-row") return;
+
+        let qty = parseFloat(cells[3]?.querySelector('input')?.value) || 0;
+        let amt = parseFloat(cells[5]?.querySelector('input')?.value) || 0;
+        let taxable = parseFloat(cells[6]?.querySelector('input')?.value) || 0;
+        let cgst = parseFloat(cells[8]?.querySelector('input')?.value) || 0;
+        let sgst = parseFloat(cells[10]?.querySelector('input')?.value) || 0;
+        let total = parseFloat(cells[11]?.querySelector('input')?.value) || 0;
+
+        total_qty += qty;
+        total_amt += amt;
+        total_taxable += taxable;
+        total_cgst += cgst;
+        total_sgst += sgst;
+        grand_total += total;
+    });
+
+    // ✅ FIXED mapping to correct fields
+    document.getElementById("total_qty").value = total_qty.toFixed(2);
+    document.getElementById("total_amount").value = total_amt.toFixed(2);
+    document.getElementById("total_taxable").value = total_taxable.toFixed(2);
+    document.getElementById("total_cgst").value = total_cgst.toFixed(2);
+    document.getElementById("total_sgst").value = total_sgst.toFixed(2);
+    document.getElementById("grand_total").value = grand_total.toFixed(2);
+}</script>
+</head>
+<body>
+    <div style="margin-bottom:10px;">
+    <a href="/">← Back to Home</a>
+    </div>
+    <div class="a4-page">
+    <div id="header">
+    <span>
+    <h2 id="chill">CHILL TECH</h2>
+    <h4>Card Bank Building YMCA, Alappuzha <br> Ph: <b>9446998352</b><br> GSTIN: <b>32ADKPT1315Q3Z6</b></h4>
+    </span>
+    <span>
+    <div id="og"><h4>ORIGINAL</h4></div>
+    </span>
+    </div>
+    <form action="/save" method="POST">
+    <div id="full-box">
+    <table id="tax-invoice">
+        <th>TAX INVOICE</th>
+    </table><br>
+    <div class="tax_invoice">
+        <div id="left1">
+            <div class="row1">
+            <label for="Type">Invoice Type :</label>
+            <select name="invoice_type" id="invoice_type" onchange="toggleOther()">
+               <option value="">Select</option>
+               <option value="CASH">CASH</option>
+               <option value="UPI">UPI</option>
+               <option value="CARD">CARD</option>
+               <option value="OTHER">OTHER</option>
+            </select>
+            <input type="text" id="other_type" name="other_type" placeholder="Enter type" style="display:none;">            </div>
+            <div class="row1">
+            <label for="No">Invoice No :</label>
+            <input type="text" name="invoice_no" value="{{ invoice_no }}" readonly>
+            </div>
+            <div class="row1">
+            <label for="Date">Invoice Date :</label>
+            <input type="date" id="Date" name="invoice_date">
+            </div>
+            <div class="row1">
+            <label for="State">State :</label>
+            <select id="state_main" name="state_main" onchange="setStateCode(this)">
+              <option value="">Select</option>
+              <option value="KERALA" data-code="32">KERALA</option>
+              <option value="TAMILNADU" data-code="33">TAMILNADU</option>
+              <option value="KARNATAKA" data-code="29">KARNATAKA</option>
+            </select>
+            </div>
+            <div class="row1">
+            <label>State Code :</label>
+            <input type="text" name="stcd_main" id="state_code_main" class="small-box">
+            </div>
+        </div>
+        <div id="right1">
+            <div class="row2">
+            <label for="Trans">Transportation Mode  :</label>
+            <input type="text" id="Trans" name="transportation">
+            </div>
+            <div class="row2">
+            <label for="veh_no">Vehicle Number :</label>
+            <input type="text" id="veh_no" name="vehicle_no">
+            </div>
+            <div class="row2">
+            <label for="DOS">Date of Supply :</label>
+            <input type="date" id="DOS" name="DOS">
+            </div>
+            <div class="row2">
+            <label for="POS">Place of Supply :</label>
+            <input type="text" id="POS" name="POS">
+            </div>
+        </div>
+    </div>
+    <table border="1">
+        <th>Details of Receiver</th>
+        <th id="billedto">Billed to</th>
+        <th>Details of Consignee</th>
+        <th id="shipped">Shipped to</th>
+    </table>
+    <div class="Details">
+        <div id="left2">
+            <div class="row1">
+            <label for="name">Name :</label>
+            <input type="text" id="name" name="name1" class="auto-width">
+            </div>
+            <div class="row1">
+            <label for="address">Address :</label>
+            <textarea name="address1" id="address" class="auto-expand auto-width"></textarea>
+            </div>
+            <div class="row1">
+            <label for="gstin">GSTIN :</label>
+            <input type="text" id="gstin" name="gstin1">
+            </div>
+            <div class="row1">
+            <label for="state">State :</label>
+            <select id="state_receiver" name="state1" onchange="setStateCode(this)">
+               <option value="">Select</option>
+               <option value="KERALA" data-code="32">KERALA</option>
+              <option value="TAMILNADU" data-code="33">TAMILNADU</option>
+              <option value="KARNATAKA" data-code="29">KARNATAKA</option>
+            </select>
+            </div>
+            <div class="row1">
+            <div id="stc">
+                <label for="stcd">State Code :</label>
+                <input type="text" name="stcd1" id="state_code_receiver" class="small-box">
+            </div>
+            </div>
+        </div>
+        <div id="center">
+            <label for="aadhar">Aadhar No :</label>
+            <input type="text" id="aadhar" name="aadhar">
+        </div>
+        <div id="right2">
+            <div class="row2">
+            <label for="name">Name :</label>
+            <input type="text" id="name" name="name2" class="auto-width">
+            </div>
+            <div class="row2">
+            <label for="address">Address :</label>
+            <textarea name="address2" id="address" class="auto-expand auto-width"></textarea>
+            </div>
+            <div class="row2">
+            <label for="gstin">GSTIN :</label>
+            <input type="text" id="gstin" name="gstin2">
+            </div>
+            <div class="row2">
+            <label for="state">State :</label>
+            <input type="text" id="state" name="state2">
+            </div>
+            <div class="row2">
+            <div id="stc">
+               <label for="state">State :</label>
+               <select id="state_receiver2" name="state2" onchange="setStateCode(this)">
+               <option value="">Select</option>
+               <option value="KERALA" data-code="32">KERALA</option>
+              <option value="TAMILNADU" data-code="33">TAMILNADU</option>
+              <option value="KARNATAKA" data-code="29">KARNATAKA</option>
+               </select>
+            </div>
+            </div>
+        </div>
+    </div>
+    <div class="tbl">
+    <table border="1">
+        <tr>
+            <th rowspan="2">Sl.No</th>
+            <th rowspan="2">Name of Product/Service</th>
+            <th rowspan="2">HSN <br> ACS</th>
+            <th rowspan="2">Qty</th>
+            <th rowspan="2">Rate</th>
+            <th rowspan="2">Amount</th>
+            <th rowspan="2">Taxable <br> Value</th>
+            <th colspan="2">CGST</th>
+            <th colspan="2">SGST</th>
+            <th rowspan="2">Total</th>
+        </tr>
+        <tr>
+            <th>Rate</th>
+            <th>Amount</th>
+            <th>Rate</th>
+            <th>Amount</th>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product1" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn1"></td>
+            <td><input type="text" name="qty1"></td>
+            <td><input type="text" name="rate1"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate1"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate1"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product2" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn2"></td>
+            <td><input type="text" name="qty2"></td>
+            <td><input type="text" name="rate2"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate2"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate2"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product3" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn3"></td>
+            <td><input type="text" name="qty3"></td>
+            <td><input type="text" name="rate3"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate3"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate3"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product4" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn4"></td>
+            <td><input type="text" name="qty4"></td>
+            <td><input type="text" name="rate4"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate4"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate4"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product5" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn5"></td>
+            <td><input type="text" name="qty5"></td>
+            <td><input type="text" name="rate5"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate5"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate5"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product6" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn6"></td>
+            <td><input type="text" name="qty6"></td>
+            <td><input type="text" name="rate6"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate6"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate6"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product7" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn7"></td>
+            <td><input type="text" name="qty7"></td>
+            <td><input type="text" name="rate7"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate7"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate7"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product8" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn8"></td>
+            <td><input type="text" name="qty8"></td>
+            <td><input type="text" name="rate8"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate8"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate8"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product9" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn9"></td>
+            <td><input type="text" name="qty9"></td>
+            <td><input type="text" name="rate9"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate9"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate9"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product10" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn10"></td>
+            <td><input type="text" name="qty10"></td>
+            <td><input type="text" name="rate10"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate10"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate10"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product11" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn11"></td>
+            <td><input type="text" name="qty11"></td>
+            <td><input type="text" name="rate11"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate11"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate11"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr>
+            <td><input type="text"></td>
+            <td><textarea name="product12" class="auto-expand"></textarea></td>
+            <td><input type="text" name="hsn12"></td>
+            <td><input type="text" name="qty12"></td>
+            <td><input type="text" name="rate12"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="crate12"></td>
+            <td><input type="text"></td>
+            <td><input type="text" name="srate12"></td>
+            <td><input type="text"></td>
+            <td><input type="text"></td>
+        </tr>
+        <tr id="total-row">
+            <td colspan="3"><b>Total</b></td>
+            <td><input type="text" id="total_qty" readonly></td>
+            <td></td>
+            <td><input type="text" id="total_amount" readonly></td>
+            <td><input type="text" id="total_taxable" readonly></td>
+            <td></td>
+            <td><input type="text" id="total_cgst" readonly></td>
+            <td></td>
+            <td><input type="text" id="total_sgst" readonly></td>
+            <td><input type="text" id="grand_total" readonly></td>
+       </tr>
+    </table> 
+    </div> 
+   <table border="1" id="lower">
+    <tr>
+        <td id="left-lower">
+            <div id="tax">     
+                <h4>Total Invoice Amount in Words:</h4>
+                <input type="text" id="totalamt">
+                <div class="tax-container">
+                    <table class="tax-table">
+                        <tr>
+                            <td class="title" rowspan="5">SGST</td>
+                        </tr>
+                        <tr><td class="rate">2.5 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">6 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">9 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">14 %</td><td class="amt">0.00</td></tr>
+                    </table>
+                    <table class="tax-table">
+                        <tr>
+                            <td class="title" rowspan="5">CGST</td>
+                        </tr>
+                        <tr><td class="rate">2.5 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">6 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">9 %</td><td class="amt">0.00</td></tr>
+                        <tr><td class="rate">14 %</td><td class="amt">0.00</td></tr>
+                    </table>
+                </div>
+                <p>
+                    Bank Name: IDBI BANK <br>
+                    A/c No: 305102000001502 <br>
+                    IFSC: IBKL00
+                </p>
+            </div>
+        </td>
+        <td>
+            <table id="gst">
+                <tr>
+                    <td id="right-lower">
+                        <label>Total Amount Before Tax</label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Add : CGST</label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Add : SGST</label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Tax Amount : GST</label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label></label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>Total Amount After Tax</label>
+                        <input type="text">
+                    </td>
+                </tr>
+                <tr>
+                    <td id="right-lower">
+                        <label>G.S.T Payable on Reverse Charge</label>
+                        <input type="text" value="NA" readonly style="text-align:right;">
+                    </td>
+                </tr>
+                <tr>
+                    <td>
+                        <label id="italics">Certified that the particulars given above are true and correct</label>
+                    </td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+    <tr>
+        <td id="lower-left">
+            <label>Terms and Conditions :</label><br><br><br>
+            <label id="seal">(Common Seal)</label>
+        </td>
+        <td id="lower-right">
+            For, <br> CHILLTECH <br>Authorised Signatory
+        </td>
+    </tr>
+    <tr class="eoe">
+        <td></td>
+        <td id="eoe">[E&OE]</td>
+    </tr>
+    </table>
+    </div>
+    <button type="submit">Save</button>
+    </form>
+    </div>
+</body>
+</html>

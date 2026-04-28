@@ -1,0 +1,24 @@
+<h2>Invoice {{ invoice[1] }}</h2>
+
+<p>Date: {{ invoice[2] }}</p>
+<p>Customer: {{ invoice[3] }}</p>
+
+<table border="1">
+<tr>
+    <th>Product</th>
+    <th>Qty</th>
+    <th>Rate</th>
+    <th>Amount</th>
+</tr>
+
+{% for p in products %}
+<tr>
+    <td>{{ p[2] }}</td>
+    <td>{{ p[3] }}</td>
+    <td>{{ p[4] }}</td>
+    <td>{{ p[5] }}</td>
+</tr>
+{% endfor %}
+</table>
+
+<h3>Total: {{ invoice[4] }}</h3>

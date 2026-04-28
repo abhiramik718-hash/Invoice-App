@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>My Billing Software</title>
+    <style>
+        body {
+            font-family: Arial;
+            text-align: center;
+        }
+
+        .navbar {
+            background: black;
+            padding: 10px;
+            text-align: right;
+        }
+
+        .navbar a {
+            color: white;
+            margin: 10px;
+            text-decoration: none;
+            font-weight: bold;
+        }
+
+        .container {
+            margin-top: 100px;
+        }
+
+        .btn {
+            padding: 15px 30px;
+            margin: 20px;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<!-- 🔝 TOP BAR -->
+<div class="navbar">
+    <a href="{{ url_for('all_invoices') }}">Database</a>
+    <a href="{{ url_for('dashboard') }}">Dashboard</a>
+</div>
+
+<!-- 🔽 MAIN CONTENT -->
+<div class="container">
+    <h1>Billing Software</h1>
+
+    <a href="/invoice">
+        <button class="btn">Create Invoice</button>
+    </a>
+
+    <a href="/quotation">
+        <button class="btn">Create Quotation</button>
+    </a>
+</div>
+
+</body>
+</html>
